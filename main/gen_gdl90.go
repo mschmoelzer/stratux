@@ -737,7 +737,7 @@ func blinkStatusLED() {
 }
 
 func heartBeatSender() {
-	timer := time.NewTicker(1 * time.Second)
+	timer := time.NewTicker(100 * time.Millisecond)
 	timerMessageStats := time.NewTicker(2 * time.Second)
 	ledBlinking := false
 	for {
