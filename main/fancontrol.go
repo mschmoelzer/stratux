@@ -69,14 +69,15 @@ func fanControl() {
 	// Power on "test". Allows the user to verify that their fan is working.
 	C.pinMode(cPin, C.OUTPUT)
 	C.digitalWrite(cPin, C.HIGH)
-	time.Sleep(5 * time.Second)
-	C.digitalWrite(cPin, C.LOW)
 
-	C.pwmSetMode(C.PWM_MODE_MS)
-	C.pinMode(cPin, C.PWM_OUTPUT)
-	C.pwmSetRange(C.uint(myFanControl.PWMDutyMax))
-	C.pwmSetClock(pwmClockDivisor)
-	C.pwmWrite(cPin, C.int(myFanControl.PWMDutyMin))
+	time.Sleep(5 * time.Second)
+	//C.digitalWrite(cPin, C.LOW)
+
+	//C.pwmSetMode(C.PWM_MODE_MS)
+	//C.pinMode(cPin, C.PWM_OUTPUT)
+	//C.pwmSetRange(C.uint(myFanControl.PWMDutyMax))
+	//C.pwmSetClock(pwmClockDivisor)
+	//C.pwmWrite(cPin, C.int(myFanControl.PWMDutyMin))
 
 	myFanControl.TempCurrent = 0
 
@@ -101,7 +102,7 @@ func fanControl() {
 		}
 		//log.Println(myFanControl.TempCurrent, " ", myFanControl.PWMDutyCurrent)
 
-		C.pwmWrite(cPin, C.int(myFanControl.PWMDutyCurrent))
+		//C.pwmWrite(cPin, C.int(myFanControl.PWMDutyCurrent))
 
 		<-delay.C
 
