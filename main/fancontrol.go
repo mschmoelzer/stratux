@@ -20,21 +20,22 @@ import "C"
 const (
 	// CPU temperature target, degrees C
 	defaultTempTarget = 50.
-	hysteresis        = float32(1.)
+	hysteresisLow     = float32(1.)
+	hysteresisHigh    = float32(2.)
 
 	pwmClockDivisor = 100
 
-	/* Minimum duty cycle is the point below which the fan does
-	/* not spin. This depends on both your fan and the switching
-	/* transistor used. */
-	defaultPwmDutyMin = 1
+	// Minimum duty cycle is the point below which the fan does
+	// not spin. This depends on both your fan and the switching
+	// transistor used.
+	defaultPwmDutyMin = 6 // Sunon MF30060V1-1000U-A99 fan does not start below 50% duty cycle.
 	pwmDutyMax        = 10
 
 	// Temperature at which we give up attempting active fan speed control and set it to full speed.
 	failsafeTemp = 65
 
 	// how often to update
-	delaySeconds = 30
+	delaySeconds = 10
 
 	// GPIO-1/BCM "18"/Pin 12 on a Raspberry Pi 3
 	defaultPin = 1
@@ -76,7 +77,9 @@ func fanControl() {
 	C.pwmSetRange(C.uint(myFanControl.PWMDutyMax))
 	C.pwmSetClock(pwmClockDivisor)
 	C.pwmWrite(cPin, C.int(myFanControl.PWMDutyMin))
+
 	myFanControl.TempCurrent = 0
+
 	go cpuTempMonitor(func(cpuTemp float32) {
 		if isCPUTempValid(cpuTemp) {
 			myFanControl.TempCurrent = cpuTemp
@@ -88,17 +91,20 @@ func fanControl() {
 	delay := time.NewTicker(delaySeconds * time.Second)
 
 	for {
-		if myFanControl.TempCurrent > (myFanControl.TempTarget + hysteresis) {
+		if myFanControl.TempCurrent > (myFanControl.TempTarget + hysteresisHigh) {
 			myFanControl.PWMDutyCurrent = iMax(iMin(myFanControl.PWMDutyMax, myFanControl.PWMDutyCurrent+1), myFanControl.PWMDutyMin)
-		} else if myFanControl.TempCurrent < (myFanControl.TempTarget - hysteresis) {
+		} else if myFanControl.TempCurrent < (myFanControl.TempTarget - hysteresisLow) {
 			myFanControl.PWMDutyCurrent = iMax(myFanControl.PWMDutyCurrent-1, 0)
 			if myFanControl.PWMDutyCurrent < myFanControl.PWMDutyMin {
 				myFanControl.PWMDutyCurrent = 0
 			}
 		}
 		//log.Println(myFanControl.TempCurrent, " ", myFanControl.PWMDutyCurrent)
+
 		C.pwmWrite(cPin, C.int(myFanControl.PWMDutyCurrent))
+
 		<-delay.C
+
 		if myFanControl.PWMDutyCurrent == myFanControl.PWMDutyMax && myFanControl.TempCurrent >= failsafeTemp {
 			// Reached the maximum temperature. We stop using PWM control and set the fan to "on" permanently.
 			break
